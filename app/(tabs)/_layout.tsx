@@ -15,6 +15,7 @@ const _layout = () => {
           height: 60,
         },
         tabBarActiveTintColor: Colors.light.tabIconSelected,
+        headerShown: false,
       }}
     >
       <Tabs.Screen
