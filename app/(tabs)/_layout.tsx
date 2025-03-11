@@ -21,6 +21,7 @@ const _layout = () => {
         name="index"
         options={{
           title: "Home",
+            headerShown: false,
           tabBarIcon: ({ color }) => (
             <Entypo name="home" size={24} color={color} />
           ),
