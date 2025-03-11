@@ -6,19 +6,18 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
-import React from "react";
 
-const index = () => {
+const questionAnswer = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View>
-        <Text>Home</Text>
+        <Text>Question+Answer Screen</Text>
       </View>
     </SafeAreaView>
   );
 };
 
-export default index;
+export default questionAnswer;
 
 const styles = StyleSheet.create({
   container: {

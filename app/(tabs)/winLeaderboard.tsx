@@ -6,19 +6,18 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
-import React from "react";
 
-const index = () => {
+const winLeaderboard = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View>
-        <Text>Home</Text>
+        <Text>Win + Leaderboard Screen</Text>
       </View>
     </SafeAreaView>
   );
 };
 
-export default index;
+export default winLeaderboard;
 
 const styles = StyleSheet.create({
   container: {

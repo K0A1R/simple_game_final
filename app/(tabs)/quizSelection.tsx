@@ -6,19 +6,18 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
-import React from "react";
 
-const index = () => {
+const quizSelection = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View>
-        <Text>Home</Text>
+        <Text>Quiz Selection Screen</Text>
       </View>
     </SafeAreaView>
   );
 };
 
-export default index;
+export default quizSelection;
 
 const styles = StyleSheet.create({
   container: {
