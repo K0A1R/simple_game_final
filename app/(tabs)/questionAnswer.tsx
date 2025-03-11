@@ -71,7 +71,8 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 24,
     fontWeight: "bold",
-    marginTop: 20,
+    marginTop: 30,
+    marginBottom: 30,
     textAlign: "center",
   },
   questionText: {
