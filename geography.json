@@ -1,5 +1,67 @@
-{
-  "question": "What is the capital of Canada?",
-  "options": ["Toronto", "Ottawa", "Vancouver", "Montreal"],
-  "correctAnswer": "Ottawa"
-}
+[
+  {
+    "question": "What is the capital of Canada?",
+    "options": ["Toronto", "Ottawa", "Vancouver", "Montreal"],
+    "correctAnswer": "Ottawa"
+  },
+  {
+    "question": "What is the capital of France?",
+    "options": ["Berlin", "Madrid", "Paris", "Rome"],
+    "correctAnswer": "Paris"
+  },
+  {
+    "question": "Which is the smallest continent?",
+    "options": ["Asia", "Africa", "Australia", "Europe"],
+    "correctAnswer": "Australia"
+  },
+  {
+    "question": "Which country is known as the Land of the Rising Sun?",
+    "options": ["China", "Japan", "Thailand", "South Korea"],
+    "correctAnswer": "Japan"
+  },
+  {
+    "question": "What is the longest river in the world?",
+    "options": [
+      "Amazon River",
+      "Nile River",
+      "Yangtze River",
+      "Mississippi River"
+    ],
+    "correctAnswer": "Nile River"
+  },
+  {
+    "question": "Which desert is the largest in the world?",
+    "options": [
+      "Sahara Desert",
+      "Arabian Desert",
+      "Gobi Desert",
+      "Kalahari Desert"
+    ],
+    "correctAnswer": "Sahara Desert"
+  },
+  {
+    "question": "What is the capital of Australia?",
+    "options": ["Sydney", "Canberra", "Melbourne", "Brisbane"],
+    "correctAnswer": "Canberra"
+  },
+  {
+    "question": "Which ocean is the largest?",
+    "options": [
+      "Atlantic Ocean",
+      "Indian Ocean",
+      "Arctic Ocean",
+      "Pacific Ocean"
+    ],
+    "correctAnswer": "Pacific Ocean"
+  },
+  {
+    "question": "What is the capital of Egypt?",
+    "options": ["Cairo", "Alexandria", "Giza", "Luxor"],
+    "correctAnswer": "Cairo"
+  },
+  {
+    "question": "Which country has the most natural lakes?",
+    "options": ["Canada", "Russia", "USA", "India"],
+    "correctAnswer": "Canada"
+  }
+]

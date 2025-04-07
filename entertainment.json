@@ -1,5 +1,77 @@
-{
-  "question": "Who is the vocaloid commonly associated with the number 39?",
-  "options": ["Megurine Luka", "Flower", "Kasane Teto", "Hatsune Miku"],
-  "correctAnswer": ["Hatsune Miku"]
-}
+[
+  {
+    "question": "Who is the vocaloid commonly associated with the number 39?",
+    "options": ["Megurine Luka", "Flower", "Kasane Teto", "Hatsune Miku"],
+    "correctAnswer": ["Hatsune Miku"]
+  },
+  {
+    "question": "Who won the Academy Award for Best Actor in 2020?",
+    "options": [
+      "Joaquin Phoenix",
+      "Brad Pitt",
+      "Leonardo DiCaprio",
+      "Matthew McConaughey"
+    ],
+    "correctAnswer": "Joaquin Phoenix"
+  },
+  {
+    "question": "Which film won the Oscar for Best Picture in 2019?",
+    "options": [
+      "Parasite",
+      "1917",
+      "The Irishman",
+      "Once Upon a Time in Hollywood"
+    ],
+    "correctAnswer": "Parasite"
+  },
+  {
+    "question": "What is the name of the fictional wizarding school in the Harry Potter series?",
+    "options": ["Hogwarts", "Durmstrang", "Beauxbatons", "Ilvermorny"],
+    "correctAnswer": "Hogwarts"
+  },
+  {
+    "question": "Which artist painted the ceiling of the Sistine Chapel?",
+    "options": ["Leonardo da Vinci", "Michelangelo", "Raphael", "Caravaggio"],
+    "correctAnswer": "Michelangelo"
+  },
+  {
+    "question": "What is the highest-grossing film of all time (as of 2021)?",
+    "options": [
+      "Avatar",
+      "Titanic",
+      "Star Wars: The Force Awakens",
+      "Avengers: Endgame"
+    ],
+    "correctAnswer": ["Avatar"]
+  },
+  {
+    "question": "Which singer is known as the 'Queen of Pop'?",
+    "options": ["Madonna", "Beyoncé", "Lady Gaga", "Taylor Swift"],
+    "correctAnswer": ["Madonna"]
+  },
+  {
+    "question": "What is the name of the main character in the video game series 'The Legend of Zelda'?",
+    "options": ["Link", "Zelda", "Ganondorf", "Navi"],
+    "correctAnswer": ["Link"]
+  },
+  {
+    "question": "Which TV show features a character named Sheldon Cooper?",
+    "options": [
+      "Friends",
+      "The Big Bang Theory",
+      "How I Met Your Mother",
+      "Brooklyn Nine-Nine"
+    ],
+    "correctAnswer": ["The Big Bang Theory"]
+  },
+  {
+    "question": "Who directed the film 'Inception'?",
+    "options": [
+      "Christopher Nolan",
+      "Steven Spielberg",
+      "Martin Scorsese",
+      "Quentin Tarantino"
+    ],
+    "correctAnswer": ["Christopher Nolan"]
+  }
+]
