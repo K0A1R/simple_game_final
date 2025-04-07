@@ -6,11 +6,14 @@ import {
   Platform,
   StatusBar,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useState, useEffect } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { saveUserScore } from "../scoresServices";
+import { useAuth } from "../AuthContext";
 
 type Question = {
   question: string;
@@ -20,17 +23,20 @@ type Question = {
 
 const QuestionAnswer = () => {
   const params = useLocalSearchParams();
+  const { currentUser } = useAuth();
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-  const [userId] = useState("user1");
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
 
   useEffect(() => {
+    // Reset all states when quiz data changes
     setQuestion(null);
     setSelectedAnswer("");
     setHasAnswered(false);
     setIsCorrect(false);
+    setIsSubmittingScore(false);
 
     if (params.quizData) {
       try {
@@ -38,49 +44,52 @@ const QuestionAnswer = () => {
         setQuestion(parsedData);
       } catch (error) {
         console.error("Error parsing quiz data:", error);
+        Alert.alert("Error", "Failed to load quiz question");
       }
     }
   }, [params.quizData]);
 
   const handleAnswerSelect = async (answer: string) => {
-    if (hasAnswered) return;
+    if (hasAnswered || !currentUser) return;
 
     setSelectedAnswer(answer);
     const correct = answer === question?.correctAnswer;
     setIsCorrect(correct);
     setHasAnswered(true);
+    setIsSubmittingScore(true);
 
     try {
       await saveUserScore(
-          userId,
+          currentUser.uid,
           params.quizName as string,
           correct ? 1 : 0,
           1
+
       );
     } catch (error) {
       console.error("Failed to save score:", error);
+      Alert.alert("Error", "Failed to save your score");
+    } finally {
+      setIsSubmittingScore(false);
     }
   };
 
   const handleBackToCategories = () => {
-
-    setSelectedAnswer("");
-    setHasAnswered(false);
-    setIsCorrect(false);
     router.navigate('/quizSelection');
   };
 
   if (!question) {
     return (
         <SafeAreaView style={styles.container}>
-          <Text>Loading question...</Text>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text style={styles.loadingText}>Loading question...</Text>
         </SafeAreaView>
     );
   }
 
   return (
       <SafeAreaView style={styles.container}>
-        <View>
+        <View style={styles.content}>
           {/* Header */}
           <Text style={styles.headerText}>
             {params.quizName} <FontAwesome name={params.quizIcon as any} size={24}/>
@@ -102,14 +111,25 @@ const QuestionAnswer = () => {
                     hasAnswered && option === question.correctAnswer && {
                       backgroundColor: "green",
                     },
+                    (isSubmittingScore || !currentUser) && styles.disabledButton,
                   ]}
-                  disabled={hasAnswered}
+                  disabled={hasAnswered || isSubmittingScore || !currentUser}
               >
-                <Text style={styles.answerButtonText}>{option}</Text>
+                {isSubmittingScore && option === selectedAnswer ? (
+                    <ActivityIndicator color="white" />
+                ) : (
+                    <Text style={[
+                      styles.answerButtonText,
+                      (hasAnswered && (option === selectedAnswer || option === question.correctAnswer)) &&
+                      styles.answerButtonTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                )}
               </TouchableOpacity>
           ))}
 
-          {/* Feedback */}
+          {/* Feedback and Navigation */}
           {hasAnswered && (
               <View style={styles.feedbackContainer}>
                 <Text style={styles.feedbackText}>
@@ -118,20 +138,32 @@ const QuestionAnswer = () => {
                 <TouchableOpacity
                     style={[styles.navButton, { backgroundColor: params.quizColor as string }]}
                     onPress={handleBackToCategories}
+                    disabled={isSubmittingScore}
                 >
                   <Text style={styles.navButtonText}>Back to Categories</Text>
                 </TouchableOpacity>
               </View>
           )}
+
+          {!currentUser && (
+              <Text style={styles.authWarning}>
+                You need to be signed in to save your scores
+              </Text>
+          )}
         </View>
       </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
+  content: {
+    width: '90%',
+    maxWidth: 400,
   },
   headerText: {
     fontSize: 24,
@@ -155,9 +187,18 @@ const styles = StyleSheet.create({
     borderColor: "#000",
     borderWidth: 1,
     alignItems: "center",
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   answerButtonText: {
     fontSize: 18,
+  },
+  answerButtonTextSelected: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   feedbackContainer: {
     alignItems: "center",
@@ -180,6 +221,16 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 16,
+  },
+  authWarning: {
+    textAlign: 'center',
+    color: 'red',
+    marginTop: 20,
+    fontSize: 16,
   },
 });
 
