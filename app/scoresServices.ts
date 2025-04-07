@@ -45,8 +45,13 @@ export const getAllScores = async (): Promise<any[]> => {
  * Gets scores for a specific user
  */
 export const getUserScores = async (userId: string): Promise<any[]> => {
-    const snapshot = await getDocs(collection(db, "scores"));
-    return snapshot.docs
-        .map((doc) => doc.data())
-        .filter((score) => score.userId === userId);
+    try {      
+        const snapshot = await getDocs(collection(db, "scores"));
+        return snapshot.docs
+            .map((doc) => doc.data())
+                .filter((score) => score.userId === userId);
+    } catch (error) {
+        console.error("Error fetching user scores:", error);
+        throw error;
+    }
 };
