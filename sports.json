@@ -1,5 +1,92 @@
-{
-  "question": "In which city were the 1988 Winter Olympics held?",
-  "options": ["Sochi", "Calgary", "Sapporo", "Oslo"],
-  "correctAnswer": "Calgary"
-}
+[
+  {
+    "question": "In which city were the 1988 Winter Olympics held?",
+    "options": ["Sochi", "Calgary", "Sapporo", "Oslo"],
+    "correctAnswer": "Calgary"
+  },
+  {
+    "question": "Which country won the 2018 FIFA World Cup?",
+    "options": ["France", "Brazil", "Germany", "Argentina"],
+    "correctAnswer": "France"
+  },
+  {
+    "question": "Who holds the record for the most Grand Slam singles titles in tennis?",
+    "options": [
+      "Roger Federer",
+      "Rafael Nadal",
+      "Novak Djokovic",
+      "Serena Williams"
+    ],
+    "correctAnswer": "Roger Federer"
+  },
+  {
+    "question": "Which team won the NBA Championship in 2021?",
+    "options": [
+      "Milwaukee Bucks",
+      "Golden State Warriors",
+      "Los Angeles Lakers",
+      "Miami Heat"
+    ],
+    "correctAnswer": "Milwaukee Bucks"
+  },
+  {
+    "question": "What is the maximum score in a game of ten-pin bowling?",
+    "options": ["200", "250", "300", "350"],
+    "correctAnswer": "300"
+  },
+  {
+    "question": "Which country hosted the 2016 Summer Olympics?",
+    "options": ["China", "Brazil", "Russia", "United Kingdom"],
+    "correctAnswer": "Brazil"
+  },
+  {
+    "question": "In which sport would you perform a slam dunk?",
+    "options": ["Basketball", "Volleyball", "Tennis", "Baseball"],
+    "correctAnswer": "Basketball"
+  },
+  {
+    "question": "Who is known as 'The Greatest' in boxing?",
+    "options": [
+      "Mike Tyson",
+      "Muhammad Ali",
+      "Floyd Mayweather Jr.",
+      "Manny Pacquiao"
+    ],
+    "correctAnswer": "Muhammad Ali"
+  },
+  {
+    "question": "Which country has won the most Rugby World Cups?",
+    "options": ["New Zealand", "Australia", "South Africa", "England"],
+    "correctAnswer": "New Zealand"
+  },
+  {
+    "question": "What is the national sport of Japan?",
+    "options": ["Baseball", "Sumo Wrestling", "Soccer", "Judo"],
+    "correctAnswer": "Sumo Wrestling"
+  },
+  {
+    "question": "Which athlete is known for the phrase 'Just Do It'?",
+    "options": [
+      "Michael Jordan",
+      "Usain Bolt",
+      "Tiger Woods",
+      "Serena Williams"
+    ],
+    "correctAnswer": "Michael Jordan"
+  },
+  {
+    "question": "In which sport would you find a 'hole-in-one'?",
+    "options": ["Golf", "Tennis", "Cricket", "Baseball"],
+    "correctAnswer": "Golf"
+  },
+  {
+    "question": "Which country won the UEFA Euro 2020?",
+    "options": ["Italy", "England", "France", "Spain"],
+    "correctAnswer": "Italy"
+  },
+  {
+    "question": "What is the length of an Olympic swimming pool?",
+    "options": ["25 meters", "50 meters", "100 meters", "200 meters"],
+    "correctAnswer": "50 meters"
+  }
+]
