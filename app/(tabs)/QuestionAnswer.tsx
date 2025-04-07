@@ -29,6 +29,7 @@ const QuestionAnswer = () => {
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+  const [score, setScore] = useState(0);
 
   useEffect(() => {
     // Reset all states when quiz data changes
@@ -37,6 +38,7 @@ const QuestionAnswer = () => {
     setHasAnswered(false);
     setIsCorrect(false);
     setIsSubmittingScore(false);
+    setScore(0);
 
     if (params.quizData) {
       try {
@@ -56,15 +58,21 @@ const QuestionAnswer = () => {
     const correct = answer === question?.correctAnswer;
     setIsCorrect(correct);
     setHasAnswered(true);
+
+    {
+      /* Update score */
+    }
+    if (correct) {
+      setScore((prevScore) => prevScore + 1);
+    }
     setIsSubmittingScore(true);
 
     try {
       await saveUserScore(
-          currentUser.uid,
-          params.quizName as string,
-          correct ? 1 : 0,
-          1
-
+        currentUser.uid,
+        params.quizName as string,
+        correct ? 1 : 0,
+        question?.options.length || 0
       );
     } catch (error) {
       console.error("Failed to save score:", error);
@@ -75,83 +83,99 @@ const QuestionAnswer = () => {
   };
 
   const handleBackToCategories = () => {
-    router.navigate('/quizSelection');
+    router.navigate("/quizSelection");
   };
 
   if (!question) {
     return (
-        <SafeAreaView style={styles.container}>
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text style={styles.loadingText}>Loading question...</Text>
-        </SafeAreaView>
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.loadingText}>Loading question...</Text>
+      </SafeAreaView>
     );
   }
 
   return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          {/* Header */}
-          <Text style={styles.headerText}>
-            {params.quizName} <FontAwesome name={params.quizIcon as any} size={24}/>
-          </Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* Header */}
+        <Text style={styles.headerText}>
+          {params.quizName}{" "}
+          <FontAwesome name={params.quizIcon as any} size={24} />
+        </Text>
 
-          {/* Question */}
-          <Text style={styles.questionText}>{question.question}</Text>
+        {/* Question */}
+        <Text style={styles.questionText}>{question.question}</Text>
 
-          {/* Options */}
-          {question.options.map((option, index) => (
-              <TouchableOpacity
-                  key={index}
-                  onPress={() => handleAnswerSelect(option)}
-                  style={[
-                    styles.answerButton,
-                    hasAnswered && option === selectedAnswer && {
-                      backgroundColor: isCorrect ? "green" : "red",
-                    },
-                    hasAnswered && option === question.correctAnswer && {
-                      backgroundColor: "green",
-                    },
-                    (isSubmittingScore || !currentUser) && styles.disabledButton,
-                  ]}
-                  disabled={hasAnswered || isSubmittingScore || !currentUser}
+        {/* Options */}
+        {question.options.map((option, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() => handleAnswerSelect(option)}
+            style={[
+              styles.answerButton,
+              hasAnswered &&
+                option === selectedAnswer && {
+                  backgroundColor: isCorrect ? "green" : "red",
+                },
+              hasAnswered &&
+                option === question.correctAnswer && {
+                  backgroundColor: "green",
+                },
+              (isSubmittingScore || !currentUser) && styles.disabledButton,
+            ]}
+            disabled={hasAnswered || isSubmittingScore || !currentUser}
+          >
+            {isSubmittingScore && option === selectedAnswer ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text
+                style={[
+                  styles.answerButtonText,
+                  hasAnswered &&
+                    (option === selectedAnswer ||
+                      option === question.correctAnswer) &&
+                    styles.answerButtonTextSelected,
+                ]}
               >
-                {isSubmittingScore && option === selectedAnswer ? (
-                    <ActivityIndicator color="white" />
-                ) : (
-                    <Text style={[
-                      styles.answerButtonText,
-                      (hasAnswered && (option === selectedAnswer || option === question.correctAnswer)) &&
-                      styles.answerButtonTextSelected
-                    ]}>
-                      {option}
-                    </Text>
-                )}
-              </TouchableOpacity>
-          ))}
-
-          {/* Feedback and Navigation */}
-          {hasAnswered && (
-              <View style={styles.feedbackContainer}>
-                <Text style={styles.feedbackText}>
-                  {isCorrect ? "Correct! ✔" : "Incorrect! ❌"}
-                </Text>
-                <TouchableOpacity
-                    style={[styles.navButton, { backgroundColor: params.quizColor as string }]}
-                    onPress={handleBackToCategories}
-                    disabled={isSubmittingScore}
-                >
-                  <Text style={styles.navButtonText}>Back to Categories</Text>
-                </TouchableOpacity>
-              </View>
-          )}
-
-          {!currentUser && (
-              <Text style={styles.authWarning}>
-                You need to be signed in to save your scores
+                {option}
               </Text>
-          )}
-        </View>
-      </SafeAreaView>
+            )}
+          </TouchableOpacity>
+        ))}
+
+        {/* Feedback and Navigation */}
+        {hasAnswered && (
+          <View style={styles.feedbackContainer}>
+            <Text style={styles.feedbackText}>
+              {isCorrect ? "Correct! ✔" : "Incorrect! ❌"}
+            </Text>
+
+            {/*score display */}
+            <Text style={styles.scoreText}>Your Score: {score}</Text>
+            <TouchableOpacity
+              style={[
+                styles.navButton,
+                { backgroundColor: params.quizColor as string },
+              ]}
+              onPress={handleBackToCategories}
+              disabled={isSubmittingScore}
+            >
+              <Text style={styles.navButtonText}>Back to Categories</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {!currentUser && (
+          <Text style={styles.authWarning}>
+            You need to be signed in to save your scores
+            <TouchableOpacity onPress={() => router.push("/login")}>
+              <Text style={styles.loginLink}>Login</Text>
+            </TouchableOpacity>
+          </Text>
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -162,7 +186,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   content: {
-    width: '90%',
+    width: "90%",
     maxWidth: 400,
   },
   headerText: {
@@ -187,7 +211,7 @@ const styles = StyleSheet.create({
     borderColor: "#000",
     borderWidth: 1,
     alignItems: "center",
-    justifyContent: 'center',
+    justifyContent: "center",
     minHeight: 50,
   },
   disabledButton: {
@@ -197,8 +221,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   answerButtonTextSelected: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
   },
   feedbackContainer: {
     alignItems: "center",
@@ -208,12 +232,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   navButton: {
     padding: 15,
     borderRadius: 10,
-    marginTop: 20,
+    marginTop: 15,
+    marginBottom: 15,
     minWidth: 200,
     alignItems: "center",
   },
@@ -227,10 +252,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   authWarning: {
-    textAlign: 'center',
-    color: 'red',
+    textAlign: "center",
+    color: "red",
     marginTop: 20,
     fontSize: 16,
+  },
+  loginLink: {
+    color: "blue",
+    textDecorationLine: "underline",
+    marginLeft: 10,
+  },
+  scoreText: {
+    fontSize: 20,
+    marginTop: 10,
+    textAlign: "center",
   },
 });
 
