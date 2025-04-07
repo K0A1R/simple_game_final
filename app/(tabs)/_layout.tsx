@@ -9,6 +9,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 const _layout = () => {
+ /*
   // Access the current user and loading state from AuthContext
   const { currentUser, loading } = useAuth();
 
@@ -20,6 +21,7 @@ const _layout = () => {
   if (!currentUser) {
     return <Redirect href="/(auth)/login" />;
   }
+  */
 
   return (
     <Tabs
