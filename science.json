@@ -1,0 +1,5 @@
+{
+  "question": "What is the largest planet in our solar system?",
+  "options": ["Earth", "Saturn", "Jupiter", "Neptune"],
+  "correctAnswer": "Jupiter"
+}

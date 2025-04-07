@@ -1,0 +1,5 @@
+{
+  "question": "What is the capital of Canada?",
+  "options": ["Toronto", "Ottawa", "Vancouver", "Montreal"],
+  "correctAnswer": "Ottawa"
+}
