@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
   },
   authContainer: {
     position: "absolute",
-    top: 30,
-    right: 20,
+    top: 50,
+    right: 30,
   },
   authButton: {
     paddingVertical: 5,
