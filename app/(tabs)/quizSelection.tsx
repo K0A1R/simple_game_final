@@ -18,80 +18,86 @@ const quizTypes = [
     name: "General Knowledge",
     icon: "book",
     color: "#00A8E8",
-    dataFile: require('../../generalKnowledge.json')
+    dataFile: require("../../generalKnowledge.json"),
   },
   {
     id: "2",
     name: "Science",
     icon: "flask",
     color: "#8A2BE2",
-    dataFile: require('../../science.json')
+    dataFile: require("../../science.json"),
   },
   {
     id: "3",
     name: "History",
     icon: "calendar-o",
     color: "#FF4500",
-    dataFile: require('../../history.json')
+    dataFile: require("../../history.json"),
   },
   {
     id: "4",
     name: "Entertainment",
     icon: "music",
     color: "#FF007F",
-    dataFile: require('../../entertainment.json')
+    dataFile: require("../../entertainment.json"),
   },
   {
     id: "5",
     name: "Sports",
     icon: "futbol-o",
     color: "#FFD700",
-    dataFile: require('../../sports.json')
+    dataFile: require("../../sports.json"),
   },
   {
     id: "6",
     name: "Geography",
     icon: "globe",
     color: "#39FF14",
-    dataFile: require('../../geography.json')
+    dataFile: require("../../geography.json"),
   },
 ];
 
 const QuizSelection = () => {
-  const handleQuizSelect = (quizType: typeof quizTypes[0]) => {
+  const handleQuizSelect = (quizType: (typeof quizTypes)[0]) => {
     router.push({
-      pathname: '/QuestionAnswer',
+      pathname: "/QuestionAnswer",
       params: {
         quizName: quizType.name,
         quizIcon: quizType.icon,
         quizColor: quizType.color,
-        quizData: JSON.stringify(quizType.dataFile)
-      }
+        quizData: JSON.stringify(quizType.dataFile),
+        timeStamp: Date.now(),
+      },
     });
   };
 
   return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.title}>Select a Quiz Type</Text>
-        <FlatList
-            data={quizTypes}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-            renderItem={({ item }) => (
-                <TouchableOpacity
-                    style={[styles.button, { backgroundColor: item.color }]}
-                    onPress={() => handleQuizSelect(item)}
-                >
-                  <Text style={styles.buttonText}>
-                    {item.name}{"  "}
-                    <FontAwesome name={item.icon as keyof typeof FontAwesome.glyphMap} size={20} color="#fff" />
-                  </Text>
-                </TouchableOpacity>
-            )}
-        />
-      </SafeAreaView>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Select a Quiz Type</Text>
+      <FlatList
+        data={quizTypes}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: item.color }]}
+            onPress={() => handleQuizSelect(item)}
+          >
+            <Text style={styles.buttonText}>
+              {item.name}
+              {"  "}
+              <FontAwesome
+                name={item.icon as keyof typeof FontAwesome.glyphMap}
+                size={20}
+                color="#fff"
+              />
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -101,7 +107,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     paddingHorizontal: 20,
   },
-  title:{
+  title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 30,

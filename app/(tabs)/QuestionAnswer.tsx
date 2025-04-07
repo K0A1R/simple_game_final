@@ -24,38 +24,52 @@ type Question = {
 const QuestionAnswer = () => {
   const params = useLocalSearchParams();
   const { currentUser } = useAuth();
-  const [question, setQuestion] = useState<Question | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   const [score, setScore] = useState(0);
 
+  const currentQuestion = questions[currentQuestionIndex];
+
   useEffect(() => {
-    // Reset all states when quiz data changes
-    setQuestion(null);
-    setSelectedAnswer("");
-    setHasAnswered(false);
-    setIsCorrect(false);
-    setIsSubmittingScore(false);
-    setScore(0);
+    setQuestions([]); // Clear questions when component mounts
+    setCurrentQuestionIndex(0); // Reset question index
+    setSelectedAnswer(""); // Clear selected answer
+    setHasAnswered(false); // Reset answered state
+    setIsCorrect(false); // Reset correctness state
+    setIsSubmittingScore(false); // Reset submitting state
+    setScore(0); // Reset score
+
+    // Check if quizData is passed in params
+    // If not, navigate back to quiz selection
+    if (!params.quizData) {
+      Alert.alert("Error", "No quiz data provided");
+      router.navigate("/quizSelection");
+    }
 
     if (params.quizData) {
       try {
-        const parsedData = JSON.parse(params.quizData as string);
-        setQuestion(parsedData);
+        const quizData = JSON.parse(params.quizData as string);
+
+        const shuffledQuestions = [...quizData].sort(() => Math.random() - 0.5); // Shuffle the questions
+        setQuestions(shuffledQuestions); // Set all shuffled questions
+
+        setCurrentQuestionIndex(0); // Reset question index
       } catch (error) {
         console.error("Error parsing quiz data:", error);
         Alert.alert("Error", "Failed to load quiz question");
       }
     }
-  }, [params.quizData]);
+  }, [params.quizData, params.timeStamp]);
 
   const handleAnswerSelect = async (answer: string) => {
     if (hasAnswered || !currentUser) return;
 
     setSelectedAnswer(answer);
-    const correct = answer === question?.correctAnswer;
+    const correct = answer === questions[currentQuestionIndex].correctAnswer;
     setIsCorrect(correct);
     setHasAnswered(true);
 
@@ -72,7 +86,7 @@ const QuestionAnswer = () => {
         currentUser.uid,
         params.quizName as string,
         correct ? 1 : 0,
-        question?.options.length || 0
+        questions[currentQuestionIndex].options.length || 0
       );
     } catch (error) {
       console.error("Failed to save score:", error);
@@ -82,15 +96,34 @@ const QuestionAnswer = () => {
     }
   };
 
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+      setHasAnswered(false);
+      setSelectedAnswer("");
+      setIsCorrect(false);
+    } else {
+      Alert.alert("Quiz Complete", "Your final score is: " + score);
+      router.navigate("/quizSelection");
+      setScore(0); // Reset score for next quiz
+      setQuestions([]); // Clear questions for next quiz
+      setCurrentQuestionIndex(0); // Reset question index for next quiz
+      setSelectedAnswer(""); // Clear selected answer for next quiz
+      setHasAnswered(false); // Reset answered state for next quiz
+      setIsCorrect(false); // Reset correctness state for next quiz
+      setIsSubmittingScore(false); // Reset submitting state for next quiz
+    }
+  };
+
   const handleBackToCategories = () => {
     router.navigate("/quizSelection");
   };
 
-  if (!question) {
+  if (!currentQuestion) {
     return (
       <SafeAreaView style={styles.container}>
         <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Loading question...</Text>
+        <Text style={styles.loadingText}>Loading questions...</Text>
       </SafeAreaView>
     );
   }
@@ -105,10 +138,10 @@ const QuestionAnswer = () => {
         </Text>
 
         {/* Question */}
-        <Text style={styles.questionText}>{question.question}</Text>
+        <Text style={styles.questionText}>{currentQuestion.question}</Text>
 
         {/* Options */}
-        {question.options.map((option, index) => (
+        {currentQuestion.options.map((option, index) => (
           <TouchableOpacity
             key={index}
             onPress={() => handleAnswerSelect(option)}
@@ -119,7 +152,7 @@ const QuestionAnswer = () => {
                   backgroundColor: isCorrect ? "green" : "red",
                 },
               hasAnswered &&
-                option === question.correctAnswer && {
+                option === currentQuestion.correctAnswer && {
                   backgroundColor: "green",
                 },
               (isSubmittingScore || !currentUser) && styles.disabledButton,
@@ -134,7 +167,7 @@ const QuestionAnswer = () => {
                   styles.answerButtonText,
                   hasAnswered &&
                     (option === selectedAnswer ||
-                      option === question.correctAnswer) &&
+                      option === currentQuestion.correctAnswer) &&
                     styles.answerButtonTextSelected,
                 ]}
               >
@@ -153,6 +186,23 @@ const QuestionAnswer = () => {
 
             {/*score display */}
             <Text style={styles.scoreText}>Your Score: {score}</Text>
+
+            {/* Next Question Button */}
+            <TouchableOpacity
+              style={[
+                styles.navButton,
+                { backgroundColor: params.quizColor as string },
+              ]}
+              onPress={handleNextQuestion}
+              disabled={isSubmittingScore}
+            >
+              <Text style={styles.navButtonText}>
+                {currentQuestionIndex < questions.length - 1
+                  ? "Next Question"
+                  : "Finish Quiz"}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.navButton,
