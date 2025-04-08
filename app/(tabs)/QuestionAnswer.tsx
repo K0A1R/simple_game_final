@@ -35,7 +35,6 @@ const QuestionAnswer = () => {
   const currentQuestion = questions[currentQuestionIndex];
 
   useEffect(() => {
-    setQuestions([]); // Clear questions when component mounts
     setCurrentQuestionIndex(0); // Reset question index
     setSelectedAnswer(""); // Clear selected answer
     setHasAnswered(false); // Reset answered state

@@ -2,7 +2,7 @@
   {
     "question": "Who is the vocaloid commonly associated with the number 39?",
     "options": ["Megurine Luka", "Flower", "Kasane Teto", "Hatsune Miku"],
-    "correctAnswer": ["Hatsune Miku"]
+    "correctAnswer": "Hatsune Miku"
   },
   {
     "question": "Who won the Academy Award for Best Actor in 2020?",
@@ -42,17 +42,17 @@
       "Star Wars: The Force Awakens",
       "Avengers: Endgame"
     ],
-    "correctAnswer": ["Avatar"]
+    "correctAnswer": "Avatar"
   },
   {
     "question": "Which singer is known as the 'Queen of Pop'?",
     "options": ["Madonna", "Beyoncé", "Lady Gaga", "Taylor Swift"],
-    "correctAnswer": ["Madonna"]
+    "correctAnswer": "Madonna"
   },
   {
     "question": "What is the name of the main character in the video game series 'The Legend of Zelda'?",
     "options": ["Link", "Zelda", "Ganondorf", "Navi"],
-    "correctAnswer": ["Link"]
+    "correctAnswer": "Link"
   },
   {
     "question": "Which TV show features a character named Sheldon Cooper?",
@@ -62,7 +62,7 @@
       "How I Met Your Mother",
       "Brooklyn Nine-Nine"
     ],
-    "correctAnswer": ["The Big Bang Theory"]
+    "correctAnswer": "The Big Bang Theory"
   },
   {
     "question": "Who directed the film 'Inception'?",
@@ -72,6 +72,6 @@
       "Martin Scorsese",
       "Quentin Tarantino"
     ],
-    "correctAnswer": ["Christopher Nolan"]
+    "correctAnswer": "Christopher Nolan"
   }
 ]
