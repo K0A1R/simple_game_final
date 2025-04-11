@@ -1,33 +1,44 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { View, FlatList, StyleSheet, ActivityIndicator, RefreshControl, Platform, Alert } from "react-native"
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
-import { db } from "../firebase"
-import { useAuth } from "../AuthContext"
-import { ThemedView } from "@/components/ThemedView"
-import { ThemedText } from "@/components/ThemedText"
+import { useEffect, useState } from "react";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+  Platform,
+  Alert,
+} from "react-native";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../AuthContext";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
 
 type Score = {
-  id: string
-  userId: string
-  quizName: string
-  score: number
-  totalQuestions: number
-  percentage: number
-  timestamp: any
-}
+  id: string;
+  userId: string;
+  quizName: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  timestamp: any;
+};
 
 const Leaderboard = () => {
-  const [scores, setScores] = useState<Score[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const { currentUser } = useAuth()
+  const [scores, setScores] = useState<Score[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    setLoading(true)
-    // Create a query that orders scores by percentage in descending order
-    const scoresQuery = query(collection(db, "scores"), orderBy("percentage", "desc"))
+    setLoading(true);
+    // Create a query that orders scores by the raw score in descending order
+    const scoresQuery = query(
+      collection(db, "scores"),
+      orderBy("score", "desc")
+    );
 
     // Use onSnapshot for real-time updates
     const unsubscribe = onSnapshot(
@@ -36,32 +47,35 @@ const Leaderboard = () => {
         const updatedScores: Score[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-        })) as Score[]
-        setScores(updatedScores)
-        setLoading(false)
-        setRefreshing(false)
+        })) as Score[];
+        setScores(updatedScores);
+        setLoading(false);
+        setRefreshing(false);
       },
       (error) => {
-        console.error("Error fetching scores:", error)
-        Alert.alert("Error", "Failed to load leaderboard data. Please try again later.")
-        setLoading(false)
-        setRefreshing(false)
-      },
-    )
+        console.error("Error fetching scores:", error);
+        Alert.alert(
+          "Error",
+          "Failed to load leaderboard data. Please try again later."
+        );
+        setLoading(false);
+        setRefreshing(false);
+      }
+    );
 
     // Clean up the listener on unmount
-    return () => unsubscribe()
-  }, [])
+    return () => unsubscribe();
+  }, []);
 
   const onRefresh = () => {
-    setRefreshing(true)
+    setRefreshing(true);
     // onSnapshot already listens for live changes,
     // but you could force a refresh with additional logic if needed.
-  }
+  };
 
   const renderItem = ({ item, index }: { item: Score; index: number }) => {
     // Check if this score belongs to the current user
-    const isCurrentUser = currentUser && item.userId === currentUser.uid
+    const isCurrentUser = currentUser && item.userId === currentUser.uid;
 
     return (
       <View
@@ -75,15 +89,20 @@ const Leaderboard = () => {
         <View style={styles.details}>
           <ThemedText style={styles.quizName}>{item.quizName}</ThemedText>
           <ThemedText style={styles.scoreText}>
-            {item.score}/{item.totalQuestions} ({item.percentage}%)
+            {item.score} correct answers
           </ThemedText>
         </View>
-        <ThemedText style={[styles.userHighlight, isCurrentUser ? styles.currentUser : null]}>
+        <ThemedText
+          style={[
+            styles.userHighlight,
+            isCurrentUser ? styles.currentUser : null,
+          ]}
+        >
           {isCurrentUser ? "You" : "User " + item.userId.slice(0, 6)}
         </ThemedText>
       </View>
-    )
-  }
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -97,13 +116,19 @@ const Leaderboard = () => {
           data={scores}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<ThemedText>No scores yet. Complete a quiz to be the first!</ThemedText>}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <ThemedText>
+              No scores yet. Complete a quiz to be the first!
+            </ThemedText>
+          }
         />
       )}
     </ThemedView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -158,6 +183,6 @@ const styles = StyleSheet.create({
     color: "#4a80f0",
     fontWeight: "bold",
   },
-})
+});
 
-export default Leaderboard
+export default Leaderboard;

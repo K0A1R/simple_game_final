@@ -1,5 +1,3 @@
-"use client"
-
 import {
   StyleSheet,
   Text,
@@ -10,135 +8,116 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-} from "react-native"
-import { useState, useEffect } from "react"
-import { useLocalSearchParams, router } from "expo-router"
-import FontAwesome from "@expo/vector-icons/FontAwesome"
-import { saveUserScore } from "../scoresServices"
-import { useAuth } from "../AuthContext"
+} from "react-native";
+import { useState, useEffect } from "react";
+import { useLocalSearchParams, router } from "expo-router";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { saveUserScore } from "../scoresServices";
+import { useAuth } from "../AuthContext";
 
 type Question = {
-  question: string
-  options: string[]
-  correctAnswer: string
-}
+  question: string;
+  options: string[];
+  correctAnswer: string;
+};
 
 const QuestionAnswer = () => {
-  const params = useLocalSearchParams()
-  const { currentUser } = useAuth()
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState("")
-  const [hasAnswered, setHasAnswered] = useState(false)
-  const [isCorrect, setIsCorrect] = useState(false)
-  const [isSubmittingScore, setIsSubmittingScore] = useState(false)
-  const [score, setScore] = useState(0)
+  const params = useLocalSearchParams();
+  const { currentUser } = useAuth();
 
-  const currentQuestion = questions[currentQuestionIndex]
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  // Removed isSubmittingScore since we're not submitting on each question now.
+  const [score, setScore] = useState(0);
+
+  const currentQuestion = questions[currentQuestionIndex];
 
   useEffect(() => {
-    setCurrentQuestionIndex(0) // Reset question index
-    setSelectedAnswer("") // Clear selected answer
-    setHasAnswered(false) // Reset answered state
-    setIsCorrect(false) // Reset correctness state
-    setIsSubmittingScore(false) // Reset submitting state
-    setScore(0) // Reset score
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer("");
+    setHasAnswered(false);
+    setIsCorrect(false);
+    setScore(0);
 
-    // Check if quizData is passed in params
-    // If not, navigate back to quiz selection
-    // Check if quizData is passed in params
-    // If not, navigate back to quiz selection
-    if (!params.quizData) {
-      Alert.alert("Error", "No quiz data provided")
-      router.navigate("/quizSelection")
-    }
-
-    if (params.quizData) {
-      try {
-        const quizData = JSON.parse(params.quizData as string)
-
-        const shuffledQuestions = [...quizData].sort(() => Math.random() - 0.5) // Shuffle the questions
-        setQuestions(shuffledQuestions) // Set all shuffled questions
-
-        setCurrentQuestionIndex(0) // Reset question index
-      } catch (error) {
-        console.error("Error parsing quiz data:", error)
-        Alert.alert("Error", "Failed to load quiz question")
+    // Delay redirect slightly to ensure layout is mounted
+    const timeout = setTimeout(() => {
+      if (!params.quizData) {
+        Alert.alert("Error", "No quiz data provided");
+        router.replace("/quizSelection");
+        return;
       }
-    }
-  }, [params.quizData, params.timeStamp])
-
-  const handleAnswerSelect = async (answer: string) => {
-    if (hasAnswered || !currentUser) return
-
-    setSelectedAnswer(answer)
-    const correct = answer === questions[currentQuestionIndex].correctAnswer
-    setIsCorrect(correct)
-    setHasAnswered(true)
-    if (correct) {
-      setScore((prevScore) => prevScore + 1)
-    }
-
-    // Only try to save score if user is logged in
-    if (currentUser) {
-      setIsSubmittingScore(true)
 
       try {
-        console.log("Saving score for question:", {
-          userId: currentUser.uid,
-          quizName: params.quizName as string,
-          score: correct ? 1 : 0,
-          totalQuestions: 1, // We're saving per question
-        })
+        const parsedData = JSON.parse(params.quizData as string);
 
+        if (!Array.isArray(parsedData) || !parsedData[0]?.question) {
+          throw new Error("Invalid quiz format");
+        }
+
+        const shuffled = [...parsedData].sort(() => Math.random() - 0.5);
+        setQuestions(shuffled);
+      } catch (error) {
+        console.error("Quiz data error:", error);
+        Alert.alert("Error", "Quiz data is invalid or corrupted.");
+        router.replace("/quizSelection");
+      }
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [params.quizData, params.timeStamp]);
+
+  const handleAnswerSelect = (answer: string) => {
+    if (hasAnswered || !currentUser || !currentQuestion) return;
+
+    setSelectedAnswer(answer);
+    const correct = answer === currentQuestion.correctAnswer;
+    setIsCorrect(correct);
+    setHasAnswered(true);
+
+    if (correct) {
+      setScore((prev) => prev + 1);
+    }
+    // Removed per-question score submission.
+  };
+
+  // Make handleNextQuestion asynchronous so we can await final score submission.
+  const handleNextQuestion = async () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setSelectedAnswer("");
+      setHasAnswered(false);
+      setIsCorrect(false);
+    } else {
+      // Final submission of the cumulative score.
+      try {
         await saveUserScore(
           currentUser.uid,
           params.quizName as string,
-          correct ? 1 : 0,
-          1, // We're saving per question
-        )
+          score,
+          questions.length // Use total number of questions in this quiz.
+        );
       } catch (error) {
-        console.error("Failed to save score:", error)
-        Alert.alert("Error", "Failed to save your score")
-      } finally {
-        setIsSubmittingScore(false)
+        console.error("Failed to save final score:", error);
+        Alert.alert("Error", "Failed to save your final score.");
       }
+      Alert.alert("Quiz Complete", `Your final score is: ${score}`);
+      router.replace("/quizSelection");
+      // Reset state for next quiz if needed.
+      setScore(0);
+      setQuestions([]);
+      setCurrentQuestionIndex(0);
+      setSelectedAnswer("");
+      setHasAnswered(false);
+      setIsCorrect(false);
     }
-  }
-
-  const handleNextQuestion = async () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prevIndex) => prevIndex + 1)
-      setHasAnswered(false)
-      setSelectedAnswer("")
-      setIsCorrect(false)
-    } else {
-      // This is the end of the quiz, save the final score
-      if (currentUser) {
-        try {
-          // Save the final cumulative score
-          await saveUserScore(currentUser.uid, params.quizName as string, score, questions.length)
-          console.log("Final score saved:", score, "out of", questions.length)
-        } catch (error) {
-          console.error("Failed to save final score:", error)
-        }
-      }
-
-      Alert.alert("Quiz Complete", "Your final score is: " + score + "/" + questions.length)
-      router.navigate("/quizSelection")
-      setScore(0) // Reset score for next quiz
-      setQuestions([]) // Clear questions for next quiz
-      setCurrentQuestionIndex(0) // Reset question index for next quiz
-      setSelectedAnswer("") // Clear selected answer for next quiz
-      setHasAnswered(false) // Reset answered state for next quiz
-      setIsCorrect(false) // Reset correctness state for next quiz
-      setIsSubmittingScore(false) // Reset submitting state for next quiz
-    }
-  }
+  };
 
   const handleBackToCategories = () => {
-    router.navigate("/quizSelection")
-  }
+    router.replace("/quizSelection");
+  };
 
   if (!currentQuestion) {
     return (
@@ -146,7 +125,7 @@ const QuestionAnswer = () => {
         <ActivityIndicator size="large" color="#0000ff" />
         <Text style={styles.loadingText}>Loading questions...</Text>
       </SafeAreaView>
-    )
+    );
   }
 
   return (
@@ -154,7 +133,8 @@ const QuestionAnswer = () => {
       <View style={styles.content}>
         {/* Header */}
         <Text style={styles.headerText}>
-          {params.quizName} <FontAwesome name={params.quizIcon as any} size={24} />
+          {params.quizName}{" "}
+          <FontAwesome name={params.quizIcon as any} size={24} />
         </Text>
 
         {/* Question */}
@@ -175,50 +155,51 @@ const QuestionAnswer = () => {
                 option === currentQuestion.correctAnswer && {
                   backgroundColor: "green",
                 },
-              (isSubmittingScore || !currentUser) && styles.disabledButton,
+              // Disable button if user already answered or if user is not logged in
+              (!currentUser || hasAnswered) && styles.disabledButton,
             ]}
-            disabled={hasAnswered || isSubmittingScore || !currentUser}
+            disabled={hasAnswered || !currentUser}
           >
-            {isSubmittingScore && option === selectedAnswer ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text
-                style={[
-                  styles.answerButtonText,
-                  hasAnswered &&
-                    (option === selectedAnswer || option === currentQuestion.correctAnswer) &&
-                    styles.answerButtonTextSelected,
-                ]}
-              >
-                {option}
-              </Text>
-            )}
+            <Text
+              style={[
+                styles.answerButtonText,
+                hasAnswered &&
+                  (option === selectedAnswer ||
+                    option === currentQuestion.correctAnswer) &&
+                  styles.answerButtonTextSelected,
+              ]}
+            >
+              {option}
+            </Text>
           </TouchableOpacity>
         ))}
 
         {/* Feedback and Navigation */}
         {hasAnswered && (
           <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackText}>{isCorrect ? "Correct! ✔" : "Incorrect! ❌"}</Text>
-
-            {/*score display */}
+            <Text style={styles.feedbackText}>
+              {isCorrect ? "Correct! ✔" : "Incorrect! ❌"}
+            </Text>
             <Text style={styles.scoreText}>Your Score: {score}</Text>
-
-            {/* Next Question Button */}
             <TouchableOpacity
-              style={[styles.navButton, { backgroundColor: params.quizColor as string }]}
+              style={[
+                styles.navButton,
+                { backgroundColor: params.quizColor as string },
+              ]}
               onPress={handleNextQuestion}
-              disabled={isSubmittingScore}
             >
               <Text style={styles.navButtonText}>
-                {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Finish Quiz"}
+                {currentQuestionIndex < questions.length - 1
+                  ? "Next Question"
+                  : "Finish Quiz"}
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
-              style={[styles.navButton, { backgroundColor: params.quizColor as string }]}
+              style={[
+                styles.navButton,
+                { backgroundColor: params.quizColor as string },
+              ]}
               onPress={handleBackToCategories}
-              disabled={isSubmittingScore}
             >
               <Text style={styles.navButtonText}>Back to Categories</Text>
             </TouchableOpacity>
@@ -227,7 +208,7 @@ const QuestionAnswer = () => {
 
         {!currentUser && (
           <Text style={styles.authWarning}>
-            You need to be signed in to save your scores
+            You need to be signed in to save your scores{" "}
             <TouchableOpacity onPress={() => router.push("/login")}>
               <Text style={styles.loginLink}>Login</Text>
             </TouchableOpacity>
@@ -235,8 +216,8 @@ const QuestionAnswer = () => {
         )}
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -326,6 +307,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: "center",
   },
-})
+});
 
-export default QuestionAnswer
+export default QuestionAnswer;

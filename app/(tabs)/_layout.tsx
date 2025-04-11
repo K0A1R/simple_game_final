@@ -50,7 +50,6 @@ const _layout = () => {
           ),
         }}
       />
-      {/* Removed QuestionAnswer from tabs */}
       <Tabs.Screen
         name="leaderboard"
         options={{
