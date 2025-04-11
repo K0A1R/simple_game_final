@@ -2,6 +2,7 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
   SafeAreaView,
   Platform,
   StatusBar,
@@ -24,99 +25,98 @@ type Question = {
 const QuestionAnswer = () => {
   const params = useLocalSearchParams();
   const { currentUser } = useAuth();
-
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-  // Removed isSubmittingScore since we're not submitting on each question now.
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   const [score, setScore] = useState(0);
 
   const currentQuestion = questions[currentQuestionIndex];
 
   useEffect(() => {
-    setCurrentQuestionIndex(0);
-    setSelectedAnswer("");
-    setHasAnswered(false);
-    setIsCorrect(false);
-    setScore(0);
+    setCurrentQuestionIndex(0); // Reset question index
+    setSelectedAnswer(""); // Clear selected answer
+    setHasAnswered(false); // Reset answered state
+    setIsCorrect(false); // Reset correctness state
+    setIsSubmittingScore(false); // Reset submitting state
+    setScore(0); // Reset score
 
-    // Delay redirect slightly to ensure layout is mounted
-    const timeout = setTimeout(() => {
-      if (!params.quizData) {
-        Alert.alert("Error", "No quiz data provided");
-        router.replace("/quizSelection");
-        return;
-      }
+    // Check if quizData is passed in params
+    // If not, navigate back to quiz selection
+    if (!params.quizData) {
+      Alert.alert("Error", "No quiz data provided");
+      router.navigate("/quizSelection");
+    }
 
+    if (params.quizData) {
       try {
-        const parsedData = JSON.parse(params.quizData as string);
+        const quizData = JSON.parse(params.quizData as string);
 
-        if (!Array.isArray(parsedData) || !parsedData[0]?.question) {
-          throw new Error("Invalid quiz format");
-        }
+        const shuffledQuestions = [...quizData].sort(() => Math.random() - 0.5); // Shuffle the questions
+        setQuestions(shuffledQuestions); // Set all shuffled questions
 
-        const shuffled = [...parsedData].sort(() => Math.random() - 0.5);
-        setQuestions(shuffled);
+        setCurrentQuestionIndex(0); // Reset question index
       } catch (error) {
-        console.error("Quiz data error:", error);
-        Alert.alert("Error", "Quiz data is invalid or corrupted.");
-        router.replace("/quizSelection");
+        console.error("Error parsing quiz data:", error);
+        Alert.alert("Error", "Failed to load quiz question");
       }
-    }, 100);
-
-    return () => clearTimeout(timeout);
+    }
   }, [params.quizData, params.timeStamp]);
 
-  const handleAnswerSelect = (answer: string) => {
-    if (hasAnswered || !currentUser || !currentQuestion) return;
+  const handleAnswerSelect = async (answer: string) => {
+    if (hasAnswered || !currentUser) return;
 
     setSelectedAnswer(answer);
-    const correct = answer === currentQuestion.correctAnswer;
+    const correct = answer === questions[currentQuestionIndex].correctAnswer;
     setIsCorrect(correct);
     setHasAnswered(true);
 
-    if (correct) {
-      setScore((prev) => prev + 1);
+    {
+      /* Update score */
     }
-    // Removed per-question score submission.
+    if (correct) {
+      setScore((prevScore) => prevScore + 1);
+    }
+    setIsSubmittingScore(true);
+
+    try {
+      await saveUserScore(
+        currentUser.uid,
+        params.quizName as string,
+        correct ? 1 : 0,
+        questions[currentQuestionIndex].options.length || 0
+      );
+    } catch (error) {
+      console.error("Failed to save score:", error);
+      Alert.alert("Error", "Failed to save your score");
+    } finally {
+      setIsSubmittingScore(false);
+    }
   };
 
-  // Make handleNextQuestion asynchronous so we can await final score submission.
-  const handleNextQuestion = async () => {
+  const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setSelectedAnswer("");
+      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
       setHasAnswered(false);
+      setSelectedAnswer("");
       setIsCorrect(false);
     } else {
-      // Final submission of the cumulative score.
-      try {
-        await saveUserScore(
-          currentUser.uid,
-          params.quizName as string,
-          score,
-          questions.length // Use total number of questions in this quiz.
-        );
-      } catch (error) {
-        console.error("Failed to save final score:", error);
-        Alert.alert("Error", "Failed to save your final score.");
-      }
-      Alert.alert("Quiz Complete", `Your final score is: ${score}`);
-      router.replace("/quizSelection");
-      // Reset state for next quiz if needed.
-      setScore(0);
-      setQuestions([]);
-      setCurrentQuestionIndex(0);
-      setSelectedAnswer("");
-      setHasAnswered(false);
-      setIsCorrect(false);
+      Alert.alert("Quiz Complete", "Your final score is: " + score);
+      router.navigate("/quizSelection");
+      setScore(0); // Reset score for next quiz
+      setQuestions([]); // Clear questions for next quiz
+      setCurrentQuestionIndex(0); // Reset question index for next quiz
+      setSelectedAnswer(""); // Clear selected answer for next quiz
+      setHasAnswered(false); // Reset answered state for next quiz
+      setIsCorrect(false); // Reset correctness state for next quiz
+      setIsSubmittingScore(false); // Reset submitting state for next quiz
     }
   };
 
   const handleBackToCategories = () => {
-    router.replace("/quizSelection");
+    router.navigate("/quizSelection");
   };
 
   if (!currentQuestion) {
@@ -130,7 +130,11 @@ const QuestionAnswer = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <Text style={styles.headerText}>
           {params.quizName}{" "}
@@ -138,83 +142,97 @@ const QuestionAnswer = () => {
         </Text>
 
         {/* Question */}
-        <Text style={styles.questionText}>{currentQuestion.question}</Text>
+        <View style={styles.questionContainer}>
+          <Text style={styles.questionText}>{currentQuestion.question}</Text>
 
-        {/* Options */}
-        {currentQuestion.options.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => handleAnswerSelect(option)}
-            style={[
-              styles.answerButton,
-              hasAnswered &&
-                option === selectedAnswer && {
-                  backgroundColor: isCorrect ? "green" : "red",
-                },
-              hasAnswered &&
-                option === currentQuestion.correctAnswer && {
-                  backgroundColor: "green",
-                },
-              // Disable button if user already answered or if user is not logged in
-              (!currentUser || hasAnswered) && styles.disabledButton,
-            ]}
-            disabled={hasAnswered || !currentUser}
-          >
-            <Text
+          {/* Options */}
+          {currentQuestion.options.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleAnswerSelect(option)}
               style={[
-                styles.answerButtonText,
+                styles.answerButton,
                 hasAnswered &&
-                  (option === selectedAnswer ||
-                    option === currentQuestion.correctAnswer) &&
-                  styles.answerButtonTextSelected,
+                  option === selectedAnswer && {
+                    backgroundColor: isCorrect ? "green" : "red",
+                  },
+                hasAnswered &&
+                  option === currentQuestion.correctAnswer && {
+                    backgroundColor: "green",
+                  },
+                (isSubmittingScore || !currentUser) && styles.disabledButton,
               ]}
+              disabled={hasAnswered || isSubmittingScore || !currentUser}
             >
-              {option}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              {isSubmittingScore && option === selectedAnswer ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text
+                  style={[
+                    styles.answerButtonText,
+                    hasAnswered &&
+                      (option === selectedAnswer ||
+                        option === currentQuestion.correctAnswer) &&
+                      styles.answerButtonTextSelected,
+                  ]}
+                >
+                  {option}
+                </Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {/* Feedback and Navigation */}
-        {hasAnswered && (
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackText}>
-              {isCorrect ? "Correct! ✔" : "Incorrect! ❌"}
-            </Text>
-            <Text style={styles.scoreText}>Your Score: {score}</Text>
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                { backgroundColor: params.quizColor as string },
-              ]}
-              onPress={handleNextQuestion}
-            >
-              <Text style={styles.navButtonText}>
-                {currentQuestionIndex < questions.length - 1
-                  ? "Next Question"
-                  : "Finish Quiz"}
+        <View style={styles.bottomContainer}>
+          {hasAnswered && (
+            <View style={styles.feedbackContainer}>
+              <Text style={styles.feedbackText}>
+                {isCorrect ? "Correct! ✔" : "Incorrect! ❌"}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                { backgroundColor: params.quizColor as string },
-              ]}
-              onPress={handleBackToCategories}
-            >
-              <Text style={styles.navButtonText}>Back to Categories</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
-        {!currentUser && (
-          <Text style={styles.authWarning}>
-            You need to be signed in to save your scores{" "}
-            <TouchableOpacity onPress={() => router.push("/login")}>
-              <Text style={styles.loginLink}>Login</Text>
-            </TouchableOpacity>
-          </Text>
-        )}
-      </View>
+              {/*score display */}
+              <Text style={styles.scoreText}>Your Score: {score}</Text>
+
+              {/* Next Question Button */}
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  { backgroundColor: params.quizColor as string },
+                ]}
+                onPress={handleNextQuestion}
+                disabled={isSubmittingScore}
+              >
+                <Text style={styles.navButtonText}>
+                  {currentQuestionIndex < questions.length - 1
+                    ? "Next Question"
+                    : "Finish Quiz"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  { backgroundColor: params.quizColor as string },
+                ]}
+                onPress={handleBackToCategories}
+                disabled={isSubmittingScore}
+              >
+                <Text style={styles.navButtonText}>Back to Categories</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {!currentUser && (
+            <Text style={styles.authWarning}>
+              You need to be signed in to save your scores
+              <TouchableOpacity onPress={() => router.push("/login")}>
+                <Text style={styles.loginLink}>Login</Text>
+              </TouchableOpacity>
+            </Text>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -225,7 +243,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
+  scrollContent: {
+    paddingBottom: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   content: {
+    flex: 1,
     width: "90%",
     maxWidth: 400,
   },
@@ -306,6 +330,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginTop: 10,
     textAlign: "center",
+  },
+  questionContainer: {
+    flex: 1,
+  },
+  bottomContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
 
