@@ -1,101 +1,141 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import {
-  StyleSheet,
-  Text,
   View,
   FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
   Platform,
-  ListRenderItem,
-} from "react-native";
+} from "react-native"
+import { getAllScores } from "../scoresServices"
+import { useAuth } from "../AuthContext"
+import { ThemedView } from "@/components/ThemedView"
+import { ThemedText } from "@/components/ThemedText"
 
-import React from 'react';
-
-// Define TypeScript type for leaderboard data
-
-type LeaderboardItem = {
-  id: string;
-  name: string;
-  score: number;
+type Score = {
+  id: string
+  userId: string
+  quizName: string
+  score: number
+  totalQuestions: number
+  percentage: number
+  timestamp: any
 }
 
-const leaderBoardData: LeaderboardItem[] = [
-  { id: '1', name: 'TheRock', score: 2250},
-  { id: '2', name: 'Dva.OW', score: 2100},
-  { id: '3', name: 'Miku', score: 1900},
-  { id: '4', name: 'Glados', score: 1600},
-]
+export default function ScoresScreen() {
+  const [scores, setScores] = useState<Score[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const { currentUser } = useAuth()
 
-const borderColors = ['#FF00FF', '#D0021B','#4A90E2', '#9013FE']; // Magenta, Orange, Blue, Violet
+  const fetchScores = async () => {
+    try {
+      setLoading(true)
+      const allScores = await getAllScores()
+      setScores(allScores)
+    } catch (error) {
+      console.error("Error fetching scores", error)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
 
-const Leaderboard: React.FC = () => {
-  const renderItem: ListRenderItem<LeaderboardItem> = ({ item, index }) => (
-    <View style={styles.item}>
-      <View style={[styles.circle, { borderColor: borderColors[index % borderColors.length] }]}>
-        <Text style={styles.circleText}>{index + 1}</Text>
+  useEffect(() => {
+    fetchScores()
+  }, [])
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await fetchScores()
+  }
+
+  const renderItem = ({ item, index }: { item: Score; index: number }) => {
+    return (
+      <View style={[styles.scoreItem, index % 2 === 0 ? styles.even : styles.odd]}>
+        <ThemedText style={styles.rank}>{index + 1}</ThemedText>
+        <View style={styles.details}>
+          <ThemedText style={styles.quizName}>{item.quizName}</ThemedText>
+          <ThemedText style={styles.scoreText}>
+            {item.score}/{item.totalQuestions} ({item.percentage}%)
+          </ThemedText>
+        </View>
+        {/* You can show a snippet of the userId or "You" if it matches the current user */}
+        <ThemedText style={styles.userHighlight}>
+          {currentUser && item.userId === currentUser.uid ? "You" : item.userId.slice(0, 6)}
+        </ThemedText>
       </View>
-      <Text style={styles.name}>{item.name}</Text>
-      <Text style={styles.score}>{item.score}</Text>
-    </View>
-  );
+    )
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Leaderboard</Text>
-      <FlatList
-      data={leaderBoardData}
-      renderItem={renderItem}
-      keyExtractor={item => item.id}
-      />
-    </View>
-  );
-};
- 
-export default Leaderboard;
+    <ThemedView style={styles.container}>
+      <ThemedText type="title" style={styles.header}>
+        Leaderboard
+      </ThemedText>
+      {loading ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <FlatList
+          data={scores}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <ThemedText>No scores yet. Complete a quiz to be the first!</ThemedText>
+          }
+        />
+      )}
+    </ThemedView>
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 16,
     paddingTop: Platform.OS === "android" ? 50 : 0,
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#000', 
+    textAlign: "center",
+    marginBottom: 16,
   },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
-    marginVertical: 8,
-    backgroundColor: '#FFD700', //gold to match sports tab
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+  scoreItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
   },
-  name: {
-    fontSize: 18,
-    color: '#000', //for contrast
+  even: {
+    backgroundColor: "#f0f0f0",
   },
-  circle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
+  odd: {
+    backgroundColor: "#e0e0e0",
   },
-  circleText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  score: {
+  rank: {
     fontSize: 18,
     fontWeight: "bold",
+    marginRight: 10,
+    width: 30,
+  },
+  details: {
+    flex: 1,
+  },
+  quizName: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  scoreText: {
+    fontSize: 14,
+  },
+  userHighlight: {
+    fontWeight: "600",
+    color: "#4a80f0",
   },
 });

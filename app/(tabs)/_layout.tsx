@@ -67,7 +67,7 @@ const _layout = () => {
         }}
       />
       <Tabs.Screen
-        name="winLeaderboard"
+        name="leaderboard"
         options={{
           title: "Leaderboard",
           tabBarIcon: ({ color }) => (
