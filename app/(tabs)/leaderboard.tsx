@@ -1,101 +1,188 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import {
-  StyleSheet,
-  Text,
   View,
   FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
   Platform,
-  ListRenderItem,
+  Alert,
 } from "react-native";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../AuthContext";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
 
-import React from 'react';
-
-// Define TypeScript type for leaderboard data
-
-type LeaderboardItem = {
+type Score = {
   id: string;
-  name: string;
+  userId: string;
+  quizName: string;
   score: number;
-}
+  totalQuestions: number;
+  percentage: number;
+  timestamp: any;
+};
 
-const leaderBoardData: LeaderboardItem[] = [
-  { id: '1', name: 'TheRock', score: 2250},
-  { id: '2', name: 'Dva.OW', score: 2100},
-  { id: '3', name: 'Miku', score: 1900},
-  { id: '4', name: 'Glados', score: 1600},
-]
+const Leaderboard = () => {
+  const [scores, setScores] = useState<Score[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { currentUser } = useAuth();
 
-const borderColors = ['#FF00FF', '#D0021B','#4A90E2', '#9013FE']; // Magenta, Orange, Blue, Violet
+  useEffect(() => {
+    setLoading(true);
+    // Create a query that orders scores by the raw score in descending order
+    const scoresQuery = query(
+      collection(db, "scores"),
+      orderBy("score", "desc")
+    );
 
-const Leaderboard: React.FC = () => {
-  const renderItem: ListRenderItem<LeaderboardItem> = ({ item, index }) => (
-    <View style={styles.item}>
-      <View style={[styles.circle, { borderColor: borderColors[index % borderColors.length] }]}>
-        <Text style={styles.circleText}>{index + 1}</Text>
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(
+      scoresQuery,
+      (snapshot) => {
+        const updatedScores: Score[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Score[];
+        setScores(updatedScores);
+        setLoading(false);
+        setRefreshing(false);
+      },
+      (error) => {
+        console.error("Error fetching scores:", error);
+        Alert.alert(
+          "Error",
+          "Failed to load leaderboard data. Please try again later."
+        );
+        setLoading(false);
+        setRefreshing(false);
+      }
+    );
+
+    // Clean up the listener on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    // onSnapshot already listens for live changes,
+    // but you could force a refresh with additional logic if needed.
+  };
+
+  const renderItem = ({ item, index }: { item: Score; index: number }) => {
+    // Check if this score belongs to the current user
+    const isCurrentUser = currentUser && item.userId === currentUser.uid;
+
+    return (
+      <View
+        style={[
+          styles.scoreItem,
+          index % 2 === 0 ? styles.even : styles.odd,
+          isCurrentUser ? styles.currentUserScore : null,
+        ]}
+      >
+        <ThemedText style={styles.rank}>{index + 1}</ThemedText>
+        <View style={styles.details}>
+          <ThemedText style={styles.quizName}>{item.quizName}</ThemedText>
+          <ThemedText style={styles.scoreText}>
+            {item.score} correct answers
+          </ThemedText>
+        </View>
+        <ThemedText
+          style={[
+            styles.userHighlight,
+            isCurrentUser ? styles.currentUser : null,
+          ]}
+        >
+          {isCurrentUser ? "You" : "User " + item.userId.slice(0, 6)}
+        </ThemedText>
       </View>
-      <Text style={styles.name}>{item.name}</Text>
-      <Text style={styles.score}>{item.score}</Text>
-    </View>
-  );
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Leaderboard</Text>
-      <FlatList
-      data={leaderBoardData}
-      renderItem={renderItem}
-      keyExtractor={item => item.id}
-      />
-    </View>
+    <ThemedView style={styles.container}>
+      <ThemedText type="title" style={styles.header}>
+        Leaderboard
+      </ThemedText>
+      {loading ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <FlatList
+          data={scores}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <ThemedText>
+              No scores yet. Complete a quiz to be the first!
+            </ThemedText>
+          }
+        />
+      )}
+    </ThemedView>
   );
 };
- 
-export default Leaderboard;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 16,
     paddingTop: Platform.OS === "android" ? 50 : 0,
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#000', 
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
   },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
-    marginVertical: 8,
-    backgroundColor: '#FFD700', //gold to match sports tab
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+  scoreItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
   },
-  name: {
+  even: {
+    backgroundColor: "#f0f0f0",
+  },
+  odd: {
+    backgroundColor: "#e0e0e0",
+  },
+  currentUserScore: {
+    borderWidth: 2,
+    borderColor: "#4a80f0",
+  },
+  rank: {
     fontSize: 18,
-    color: '#000', //for contrast
+    fontWeight: "bold",
+    marginRight: 10,
+    width: 30,
   },
-  circle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
+  details: {
+    flex: 1,
   },
-  circleText: {
+  quizName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
   },
-  score: {
-    fontSize: 18,
+  scoreText: {
+    fontSize: 14,
+  },
+  userHighlight: {
+    fontWeight: "600",
+    color: "#4a80f0",
+  },
+  currentUser: {
+    color: "#4a80f0",
     fontWeight: "bold",
   },
 });
+
+export default Leaderboard;

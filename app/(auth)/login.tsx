@@ -2,8 +2,6 @@ import { useState } from "react";
 import {
   View,
   TextInput,
-  Button,
-  Alert,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -11,27 +9,37 @@ import {
 } from "react-native";
 import { Link, router } from "expo-router";
 import { useAuth } from "../AuthContext";
-import { FirebaseError } from "firebase/app";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
 
   async function handleLogin() {
-    try {
-      await login(email, password);
+    setError("");
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    const result = await login(email, password);
+    if (result.success) {
       router.replace("/(tabs)");
-    } catch (error) {
-      let errorMessage = "An unknown error occurred";
-
-      if (error instanceof FirebaseError) {
-        errorMessage = error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      Alert.alert("Login Failed", errorMessage);
+    } else {
+      setError(result.error);
     }
   }
 
@@ -40,6 +48,8 @@ export default function Login() {
       <View style={styles.container}>
         <Text style={styles.title}>Welcome Back!</Text>
         <Text style={styles.subtitle}>Please sign in to continue</Text>
+
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <TextInput
           style={styles.input}
@@ -57,8 +67,11 @@ export default function Login() {
           placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
         />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} />
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Log In</Text>
@@ -134,5 +147,10 @@ const styles = StyleSheet.create({
   footerLink: {
     color: "#4a80f0",
     fontWeight: "600",
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 16,
+    textAlign: "center",
   },
 });

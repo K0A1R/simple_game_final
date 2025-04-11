@@ -1,9 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   TextInput,
-  Button,
-  Alert,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -11,27 +9,38 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../AuthContext";
-import { FirebaseError } from "firebase/app";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { signup } = useAuth();
 
   async function handleSignup() {
-    try {
-      await signup(email, password);
+    setError("");
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    const result = await signup(email, password);
+
+    if (result.success) {
       router.replace("/(tabs)");
-    } catch (error) {
-      let errorMessage = "An unknown error occurred";
-
-      if (error instanceof FirebaseError) {
-        errorMessage = error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      Alert.alert("Error", errorMessage);
+    } else {
+      setError(result.error);
     }
   }
 
@@ -41,12 +50,17 @@ export default function SignupScreen() {
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Join us to start playing!</Text>
 
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <TextInput
           style={styles.input}
           placeholder="Email"
           placeholderTextColor="#999"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            setError("");
+          }}
           autoCapitalize="none"
           keyboardType="email-address"
         />
@@ -57,8 +71,11 @@ export default function SignupScreen() {
           placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
         />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} />
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={handleSignup}>
           <Text style={styles.buttonText}>Sign Up</Text>
@@ -132,5 +149,10 @@ const styles = StyleSheet.create({
   footerLink: {
     color: "#4a80f0",
     fontWeight: "600",
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 16,
+    textAlign: "center",
   },
 });
