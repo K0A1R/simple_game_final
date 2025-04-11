@@ -1,15 +1,23 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import {
+  FIREBASE_API_KEY,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_PROJECT_ID,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID,
+} from "@env";
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyA1ErOLTStcLBInfdrfeC22GUvFq7NXbNE",
-  authDomain: "quizgameapp-bb7ac.firebaseapp.com",
-  projectId: "quizgameapp-bb7ac",
-  storageBucket: "quizgameapp-bb7ac.firebasestorage.app",
-  messagingSenderId: "605841568583",
-  appId: "1:605841568583:web:6d5a218c70a07459d59262",
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
