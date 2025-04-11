@@ -8,20 +8,28 @@ export const saveUserScore = async (
   userId: string,
   quizName: string,
   score: number,
-  totalQuestions: number
+  totalQuestions: number,
 ): Promise<void> => {
   try {
     // Ensure we do not divide by zero.
-    const percentage =
-      totalQuestions === 0 ? 0 : Math.round((score / totalQuestions) * 100)
+    const percentage = totalQuestions === 0 ? 0 : Math.round((score / totalQuestions) * 100)
+
+    // Add a timestamp that will work correctly with Firestore
+    const timestamp = new Date()
+
+    // Log the data being saved for debugging
+    console.log("Saving score:", { userId, quizName, score, totalQuestions, percentage, timestamp })
+
     await addDoc(collection(db, "scores"), {
       userId,
       quizName,
       score,
       totalQuestions,
       percentage,
-      timestamp: new Date(),
+      timestamp,
     })
+
+    console.log("Score saved successfully")
   } catch (error) {
     console.error("Error saving score:", error)
     throw error
@@ -33,10 +41,7 @@ export const saveUserScore = async (
  */
 export const getAllScores = async (): Promise<any[]> => {
   try {
-    const scoresQuery = query(
-      collection(db, "scores"),
-      orderBy("percentage", "desc")
-    )
+    const scoresQuery = query(collection(db, "scores"), orderBy("percentage", "desc"))
     const snapshot = await getDocs(scoresQuery)
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
   } catch (error) {

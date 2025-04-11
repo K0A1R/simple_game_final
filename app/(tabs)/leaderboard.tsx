@@ -1,15 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-  View,
-  FlatList,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-  Platform,
-} from "react-native"
-import { getAllScores } from "../scoresServices"
+import { View, FlatList, StyleSheet, ActivityIndicator, RefreshControl, Platform, Alert } from "react-native"
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
+import { db } from "../firebase"
 import { useAuth } from "../AuthContext"
 import { ThemedView } from "@/components/ThemedView"
 import { ThemedText } from "@/components/ThemedText"
@@ -24,37 +18,59 @@ type Score = {
   timestamp: any
 }
 
-export default function ScoresScreen() {
+const Leaderboard = () => {
   const [scores, setScores] = useState<Score[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const { currentUser } = useAuth()
 
-  const fetchScores = async () => {
-    try {
-      setLoading(true)
-      const allScores = await getAllScores()
-      setScores(allScores)
-    } catch (error) {
-      console.error("Error fetching scores", error)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
-
   useEffect(() => {
-    fetchScores()
+    setLoading(true)
+    // Create a query that orders scores by percentage in descending order
+    const scoresQuery = query(collection(db, "scores"), orderBy("percentage", "desc"))
+
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(
+      scoresQuery,
+      (snapshot) => {
+        const updatedScores: Score[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Score[]
+        setScores(updatedScores)
+        setLoading(false)
+        setRefreshing(false)
+      },
+      (error) => {
+        console.error("Error fetching scores:", error)
+        Alert.alert("Error", "Failed to load leaderboard data. Please try again later.")
+        setLoading(false)
+        setRefreshing(false)
+      },
+    )
+
+    // Clean up the listener on unmount
+    return () => unsubscribe()
   }, [])
 
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true)
-    await fetchScores()
+    // onSnapshot already listens for live changes,
+    // but you could force a refresh with additional logic if needed.
   }
 
   const renderItem = ({ item, index }: { item: Score; index: number }) => {
+    // Check if this score belongs to the current user
+    const isCurrentUser = currentUser && item.userId === currentUser.uid
+
     return (
-      <View style={[styles.scoreItem, index % 2 === 0 ? styles.even : styles.odd]}>
+      <View
+        style={[
+          styles.scoreItem,
+          index % 2 === 0 ? styles.even : styles.odd,
+          isCurrentUser ? styles.currentUserScore : null,
+        ]}
+      >
         <ThemedText style={styles.rank}>{index + 1}</ThemedText>
         <View style={styles.details}>
           <ThemedText style={styles.quizName}>{item.quizName}</ThemedText>
@@ -62,9 +78,8 @@ export default function ScoresScreen() {
             {item.score}/{item.totalQuestions} ({item.percentage}%)
           </ThemedText>
         </View>
-        {/* You can show a snippet of the userId or "You" if it matches the current user */}
-        <ThemedText style={styles.userHighlight}>
-          {currentUser && item.userId === currentUser.uid ? "You" : item.userId.slice(0, 6)}
+        <ThemedText style={[styles.userHighlight, isCurrentUser ? styles.currentUser : null]}>
+          {isCurrentUser ? "You" : "User " + item.userId.slice(0, 6)}
         </ThemedText>
       </View>
     )
@@ -82,12 +97,8 @@ export default function ScoresScreen() {
           data={scores}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={
-            <ThemedText>No scores yet. Complete a quiz to be the first!</ThemedText>
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={<ThemedText>No scores yet. Complete a quiz to be the first!</ThemedText>}
         />
       )}
     </ThemedView>
@@ -102,6 +113,7 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 24,
+    fontWeight: "bold",
     textAlign: "center",
     marginBottom: 16,
   },
@@ -117,6 +129,10 @@ const styles = StyleSheet.create({
   },
   odd: {
     backgroundColor: "#e0e0e0",
+  },
+  currentUserScore: {
+    borderWidth: 2,
+    borderColor: "#4a80f0",
   },
   rank: {
     fontSize: 18,
@@ -138,4 +154,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#4a80f0",
   },
-});
+  currentUser: {
+    color: "#4a80f0",
+    fontWeight: "bold",
+  },
+})
+
+export default Leaderboard
