@@ -2,6 +2,7 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
   SafeAreaView,
   Platform,
   StatusBar,
@@ -129,7 +130,11 @@ const QuestionAnswer = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <Text style={styles.headerText}>
           {params.quizName}{" "}
@@ -137,93 +142,97 @@ const QuestionAnswer = () => {
         </Text>
 
         {/* Question */}
-        <Text style={styles.questionText}>{currentQuestion.question}</Text>
+        <View style={styles.questionContainer}>
+          <Text style={styles.questionText}>{currentQuestion.question}</Text>
 
-        {/* Options */}
-        {currentQuestion.options.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => handleAnswerSelect(option)}
-            style={[
-              styles.answerButton,
-              hasAnswered &&
-                option === selectedAnswer && {
-                  backgroundColor: isCorrect ? "green" : "red",
-                },
-              hasAnswered &&
-                option === currentQuestion.correctAnswer && {
-                  backgroundColor: "green",
-                },
-              (isSubmittingScore || !currentUser) && styles.disabledButton,
-            ]}
-            disabled={hasAnswered || isSubmittingScore || !currentUser}
-          >
-            {isSubmittingScore && option === selectedAnswer ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text
-                style={[
-                  styles.answerButtonText,
-                  hasAnswered &&
-                    (option === selectedAnswer ||
-                      option === currentQuestion.correctAnswer) &&
-                    styles.answerButtonTextSelected,
-                ]}
-              >
-                {option}
-              </Text>
-            )}
-          </TouchableOpacity>
-        ))}
+          {/* Options */}
+          {currentQuestion.options.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleAnswerSelect(option)}
+              style={[
+                styles.answerButton,
+                hasAnswered &&
+                  option === selectedAnswer && {
+                    backgroundColor: isCorrect ? "green" : "red",
+                  },
+                hasAnswered &&
+                  option === currentQuestion.correctAnswer && {
+                    backgroundColor: "green",
+                  },
+                (isSubmittingScore || !currentUser) && styles.disabledButton,
+              ]}
+              disabled={hasAnswered || isSubmittingScore || !currentUser}
+            >
+              {isSubmittingScore && option === selectedAnswer ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text
+                  style={[
+                    styles.answerButtonText,
+                    hasAnswered &&
+                      (option === selectedAnswer ||
+                        option === currentQuestion.correctAnswer) &&
+                      styles.answerButtonTextSelected,
+                  ]}
+                >
+                  {option}
+                </Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {/* Feedback and Navigation */}
-        {hasAnswered && (
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackText}>
-              {isCorrect ? "Correct! ✔" : "Incorrect! ❌"}
-            </Text>
-
-            {/*score display */}
-            <Text style={styles.scoreText}>Your Score: {score}</Text>
-
-            {/* Next Question Button */}
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                { backgroundColor: params.quizColor as string },
-              ]}
-              onPress={handleNextQuestion}
-              disabled={isSubmittingScore}
-            >
-              <Text style={styles.navButtonText}>
-                {currentQuestionIndex < questions.length - 1
-                  ? "Next Question"
-                  : "Finish Quiz"}
+        <View style={styles.bottomContainer}>
+          {hasAnswered && (
+            <View style={styles.feedbackContainer}>
+              <Text style={styles.feedbackText}>
+                {isCorrect ? "Correct! ✔" : "Incorrect! ❌"}
               </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                { backgroundColor: params.quizColor as string },
-              ]}
-              onPress={handleBackToCategories}
-              disabled={isSubmittingScore}
-            >
-              <Text style={styles.navButtonText}>Back to Categories</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+              {/*score display */}
+              <Text style={styles.scoreText}>Your Score: {score}</Text>
 
-        {!currentUser && (
-          <Text style={styles.authWarning}>
-            You need to be signed in to save your scores
-            <TouchableOpacity onPress={() => router.push("/login")}>
-              <Text style={styles.loginLink}>Login</Text>
-            </TouchableOpacity>
-          </Text>
-        )}
-      </View>
+              {/* Next Question Button */}
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  { backgroundColor: params.quizColor as string },
+                ]}
+                onPress={handleNextQuestion}
+                disabled={isSubmittingScore}
+              >
+                <Text style={styles.navButtonText}>
+                  {currentQuestionIndex < questions.length - 1
+                    ? "Next Question"
+                    : "Finish Quiz"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  { backgroundColor: params.quizColor as string },
+                ]}
+                onPress={handleBackToCategories}
+                disabled={isSubmittingScore}
+              >
+                <Text style={styles.navButtonText}>Back to Categories</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {!currentUser && (
+            <Text style={styles.authWarning}>
+              You need to be signed in to save your scores
+              <TouchableOpacity onPress={() => router.push("/login")}>
+                <Text style={styles.loginLink}>Login</Text>
+              </TouchableOpacity>
+            </Text>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -234,7 +243,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
+  scrollContent: {
+    paddingBottom: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   content: {
+    flex: 1,
     width: "90%",
     maxWidth: 400,
   },
@@ -315,6 +330,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginTop: 10,
     textAlign: "center",
+  },
+  questionContainer: {
+    flex: 1,
+  },
+  bottomContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
 
